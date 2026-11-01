@@ -58,6 +58,7 @@
   }
 
   var magic = .9;
+  var currentPhase = null;
 
   function setSky() {
     var now = new Date(), h = now.getHours() + now.getMinutes() / 60;
@@ -93,6 +94,13 @@
     if (clock) {
       var time = now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
       clock.innerHTML = "<b>" + phaseName(h) + "</b> over the reading room · " + time;
+    }
+
+    // Let the soundtrack (js/music.js) follow the hour too.
+    var phase = phaseName(h);
+    if (phase !== currentPhase) {
+      currentPhase = phase;
+      document.dispatchEvent(new CustomEvent("roomphase", { detail: phase }));
     }
   }
 
@@ -164,6 +172,7 @@
   /* Leather colour for a spine, picked by the shared hash in js/quiz.js (loaded first). */
   var LEATHER = ["--l0", "--l1", "--l2", "--l3", "--l4", "--l5", "--l6", "--l7"];
   window.ReadingRoom = {
+    phase: function () { return currentPhase; },
     leather: function (key) { return "var(" + LEATHER[window.GameOfBooks.hash(key) % LEATHER.length] + ")"; }
   };
 })();

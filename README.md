@@ -32,7 +32,7 @@ Then open http://localhost:8000.
 ## Updating the site
 
 `index.html` and `results.html` load the CSS and JavaScript with a version suffix such as
-`?v=20261101-4`, so browsers and GitHub Pages' cache always pick up new files. The book
+`?v=20261101-5`, so browsers and GitHub Pages' cache always pick up new files. The book
 list (`fantasy_novels.json`) reuses the version from the `results.js` link automatically.
 When you change any CSS, JavaScript or the book list, set a new version in both pages
 (this works whatever the current value is):
