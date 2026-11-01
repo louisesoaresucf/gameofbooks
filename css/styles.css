@@ -264,7 +264,11 @@ a { color: var(--gilt); }
 @keyframes shelve { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: none; } }
 
 .recs { list-style: none; margin: 0; padding: 0; display: grid; gap: 34px; }
-.rec { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 30px; align-items: center; scroll-margin-top: 20px; }
+.all-row { text-align: center; margin: 0 0 22px; }
+.rec {
+  --from-x: -215px; --from-y: 12px; --origin: left center;
+  display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 30px; align-items: start; scroll-margin-top: 20px;
+}
 .rec:target .libcard { outline: 2px solid var(--gilt); outline-offset: 3px; }
 
 /* left: a colourful cloth-bound book, front cover facing out */
@@ -280,7 +284,53 @@ a { color: var(--gilt); }
     0 22px 38px rgba(0,0,0,.6);
   transform: rotate(-2deg); transition: transform .3s ease;
 }
-.rec:hover .tome { transform: rotate(0deg) translateY(-4px); }
+.tome-btn {
+  position: relative; z-index: 2; justify-self: center; display: block; margin: 8px 0 0;
+  background: none; border: 0; padding: 0; cursor: pointer; border-radius: 6px;
+}
+.tome-btn:focus-visible { outline: 2px solid var(--gilt); outline-offset: 8px; }
+.tome-btn .tome { display: block; z-index: 1; }
+.tome-btn:hover .tome, .tome-btn:focus-visible .tome { transform: rotate(0deg) translateY(-4px); }
+.rec.open .tome { transform: rotate(0deg); }
+/* a library card peeking out of the top of the closed book */
+.peek {
+  position: absolute; z-index: 0; top: 4px; left: 50%; width: 118px; height: 72px; margin-left: -54px; border-radius: 2px;
+  background: linear-gradient(var(--stamp), var(--stamp)) 10px 13px / calc(100% - 20px) 1px no-repeat,
+    repeating-linear-gradient(to bottom, transparent 0 13px, rgba(140,110,70,.25) 13px 14px), var(--card);
+  box-shadow: 0 2px 6px rgba(0,0,0,.4); transform: rotate(3deg); transition: transform .3s ease, opacity .2s;
+}
+.tome-btn:hover .peek, .tome-btn:focus-visible .peek { transform: translateY(-22px) rotate(3deg); }
+.rec.open .peek { opacity: 0; transform: none; }
+
+.card-slot { position: relative; z-index: 1; display: grid; min-height: 300px; }
+.card-slot > * { grid-area: 1 / 1; }
+.card-hint {
+  align-self: center; margin: 0; color: var(--muted); font-style: italic; transition: opacity .25s;
+}
+.card-hint::before { content: "← "; color: var(--gilt-dim); font-style: normal; }
+.rec.open .card-hint, .rec.closing .card-hint { opacity: 0; pointer-events: none; }
+
+/* the card slides out from behind the book, overshoots a touch, and settles */
+.libcard { transform-origin: var(--origin); }
+.libcard.draw { animation: draw .8s cubic-bezier(.2, .75, .25, 1) both; }
+.libcard.tuck { animation: tuck .45s cubic-bezier(.5, 0, .75, .4) both; }
+@keyframes draw {
+  0% { transform: translate(var(--from-x), var(--from-y)) scale(.28) rotate(-7deg); opacity: 0; }
+  14% { opacity: 1; }
+  58% { transform: translate(calc(var(--from-x) * -0.06), calc(var(--from-y) * -0.06)) scale(1.02) rotate(1.5deg); }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes tuck {
+  0% { transform: none; opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translate(var(--from-x), var(--from-y)) scale(.28) rotate(-7deg); opacity: 0; }
+}
+.rec.open .libcard .stamp { opacity: .9; transform: rotate(-8deg); }
+.libcard.draw .stamp { animation: thump .3s ease-out .78s both; }
+@keyframes thump {
+  from { opacity: 0; transform: rotate(-8deg) scale(1.7); }
+  to { opacity: .9; transform: rotate(-8deg) scale(1); }
+}
 .tome::before { /* ribbon bookmark */
   content: ""; position: absolute; bottom: -14px; right: 26px; width: 10px; height: 26px;
   background: var(--gilt); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
@@ -301,12 +351,14 @@ a { color: var(--gilt); }
 
 /* right: the library card */
 .libcard { padding-bottom: 46px; }
-.facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7px 16px; margin: 12px 0 0; }
+.facts { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 7px 16px; margin: 12px 0 0; }
 .facts dt {
   font-family: var(--f-mono); font-size: .74rem; text-transform: uppercase; letter-spacing: .08em;
-  color: var(--card-muted); padding-top: 4px;
+  color: var(--card-muted);
 }
 .facts dd { margin: 0; min-width: 0; }
+.facts h3 { font-family: var(--f-title); font-weight: 400; font-size: 1.4rem; line-height: 1.2; margin: 0; text-wrap: balance; }
+.f-author { font-style: italic; color: var(--card-muted); }
 .f-summary { line-height: 1.5; }
 .libcard .chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .libcard .chip { font-family: var(--f-mono); font-size: .76rem; border: 1px solid var(--card-rule); border-radius: 2px; padding: 1px 6px; background: var(--card-hi); }
@@ -323,7 +375,10 @@ footer.site { text-align: center; font-family: var(--f-mono); font-size: .78rem;
 @media (max-width: 760px) { .hall-stacks { display: none; } .candle.far { display: none; } }
 @media (max-width: 640px) {
   .win.side { display: none; }
-  .rec { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+  .rec { grid-template-columns: minmax(0, 1fr); gap: 18px; --from-x: 0px; --from-y: -230px; --origin: top center; }
+  .card-slot { min-height: 0; }
+  .card-hint { text-align: center; }
+  .card-hint::before { content: "↑ "; }
   .tome { width: 160px; }
   .tome-title { font-size: 1.15rem; }
 }

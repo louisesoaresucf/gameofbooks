@@ -62,31 +62,43 @@
     a.setAttribute("aria-label", "No. " + (i + 1) + ": " + book.title);
     a.appendChild(el("span", "st", book.title));
     a.appendChild(el("span", "rk", ROMAN[i]));
+    a.addEventListener("click", function () {
+      var li = document.getElementById("rec-" + (i + 1));
+      if (li) openCard(li);
+    });
     return a;
   }
 
   /* Left: a colourful front-facing book with its title and author. */
-  function bookCover(book) {
+  function bookCover(book, i) {
     var c = binding(book);
-    var wrap = el("div", "tome");
-    wrap.setAttribute("aria-hidden", "true");
+    var btn = el("button", "tome-btn");
+    btn.type = "button";
+    btn.setAttribute("aria-expanded", "false");
+    btn.setAttribute("aria-controls", "card-" + (i + 1));
+    btn.setAttribute("aria-label", book.title + " by " + book.authors.join(", ") + ": show library card");
+    btn.appendChild(el("span", "peek"));
+    var wrap = el("span", "tome");
     wrap.style.setProperty("--b", c[0]);
     wrap.style.setProperty("--bh", c[1]);
-    var face = el("div", "tome-face");
+    var face = el("span", "tome-face");
     face.appendChild(el("span", "orn", "❦"));
-    face.appendChild(el("p", "tome-title", book.title));
+    face.appendChild(el("span", "tome-title", book.title));
     face.appendChild(el("span", "tome-rule"));
-    face.appendChild(el("p", "tome-author", book.authors.join(", ")));
+    face.appendChild(el("span", "tome-author", book.authors.join(", ")));
     face.appendChild(el("span", "orn", "❦"));
     wrap.appendChild(face);
-    return wrap;
+    btn.appendChild(wrap);
+    return btn;
   }
 
   /* Right: a library card summarising the book's tropes. */
   function libraryCard(pick, i) {
     var book = pick.book;
     var card = el("article", "card libcard");
-    card.setAttribute("aria-label", "Library card for " + book.title + " by " + book.authors.join(", "));
+    card.id = "card-" + (i + 1);
+    card.hidden = true;
+    card.setAttribute("aria-label", "Library card for " + book.title);
 
     var top = el("div", "card-top");
     top.appendChild(el("span", null, "Library card · No. " + (i + 1)));
@@ -94,6 +106,12 @@
     card.appendChild(top);
 
     var facts = el("dl", "facts");
+    facts.appendChild(el("dt", null, "Title"));
+    var titleDd = el("dd", "f-title");
+    titleDd.appendChild(el("h3", null, book.title));
+    facts.appendChild(titleDd);
+    facts.appendChild(el("dt", null, "Author"));
+    facts.appendChild(el("dd", "f-author", book.authors.join(", ")));
 
     // Matched tropes lead the summary, then the book's other tropes.
     var ordered = pick.matched.concat(book.tags.filter(function (t) { return pick.matched.indexOf(t) < 0; }));
@@ -135,7 +153,7 @@
       card.appendChild(el("p", "matchnote", "✓ " + pick.matched.length + " of " + book.tags.length +
         " tropes match your answers"));
     }
-    card.appendChild(el("span", "stamp show", "Recommended"));
+    card.appendChild(el("span", "stamp", "Recommended"));
     return card;
   }
 
@@ -143,15 +161,73 @@
     var li = el("li", "rec fade-in");
     li.id = "rec-" + (i + 1);
     li.style.animationDelay = (i * 80) + "ms";
-    li.appendChild(bookCover(pick.book));
-    li.appendChild(libraryCard(pick, i));
+    var book = bookCover(pick.book, i);
+    var slot = el("div", "card-slot");
+    var hint = el("p", "card-hint", "Open the book to draw out its library card");
+    var lib = libraryCard(pick, i);
+    slot.appendChild(hint);
+    slot.appendChild(lib);
+    li.appendChild(book);
+    li.appendChild(slot);
+    book.addEventListener("click", function () { toggle(li); });
     return li;
   }
+
+  /* ---------- drawing a card out of its book, and tucking it back in ---------- */
+  var reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function isOpen(li) { return li.classList.contains("open"); }
+
+  function openCard(li) {
+    if (isOpen(li)) return;
+    var lib = li.querySelector(".libcard");
+    li.classList.remove("closing");
+    li.classList.add("open");
+    li.querySelector(".tome-btn").setAttribute("aria-expanded", "true");
+    lib.hidden = false;
+    lib.classList.remove("tuck");
+    void lib.offsetWidth; // restart the animation
+    lib.classList.add("draw");
+    syncAllButton();
+  }
+
+  function closeCard(li) {
+    if (!isOpen(li)) return;
+    var lib = li.querySelector(".libcard");
+    li.classList.remove("open");
+    li.querySelector(".tome-btn").setAttribute("aria-expanded", "false");
+    syncAllButton();
+    if (reduceMotion) { lib.hidden = true; return; }
+    li.classList.add("closing");
+    lib.classList.remove("draw");
+    lib.classList.add("tuck");
+    lib.addEventListener("animationend", function done(e) {
+      if (e.target !== lib) return;
+      lib.removeEventListener("animationend", done);
+      if (!isOpen(li)) { lib.hidden = true; lib.classList.remove("tuck"); li.classList.remove("closing"); }
+    });
+  }
+
+  function toggle(li) { if (isOpen(li)) closeCard(li); else openCard(li); }
+
+  var allBtn = document.getElementById("open-all");
+  function rows() { return Array.prototype.slice.call(booksEl.querySelectorAll(".rec")); }
+  function syncAllButton() {
+    var all = rows().length && rows().every(isOpen);
+    allBtn.textContent = all ? "Tuck all cards away" : "Draw out every card";
+  }
+  allBtn.addEventListener("click", function () {
+    var all = rows().every(isOpen);
+    rows().forEach(function (li, i) {
+      setTimeout(function () { if (all) closeCard(li); else openCard(li); }, reduceMotion ? 0 : i * 120);
+    });
+  });
 
   function renderBooks(books) {
     var picks = G.recommend(books, profile, 5, seed);
     statusEl.hidden = true;
     caseEl.hidden = false;
+    allBtn.hidden = false;
     picks.forEach(function (pick, i) {
       caseEl.appendChild(spine(pick, i));
       booksEl.appendChild(card(pick, i));
