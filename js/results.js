@@ -86,7 +86,7 @@
   function libraryCard(pick, i) {
     var book = pick.book;
     var card = el("article", "card libcard");
-    card.setAttribute("aria-labelledby", "rec-title-" + (i + 1));
+    card.setAttribute("aria-label", "Library card for " + book.title + " by " + book.authors.join(", "));
 
     var top = el("div", "card-top");
     top.appendChild(el("span", null, "Library card · No. " + (i + 1)));
@@ -94,13 +94,6 @@
     card.appendChild(top);
 
     var facts = el("dl", "facts");
-    var dt = el("dt", null, "Title"), dd = el("dd", "f-title");
-    var h3 = el("h3", null, book.title);
-    h3.id = "rec-title-" + (i + 1);
-    dd.appendChild(h3);
-    facts.appendChild(dt); facts.appendChild(dd);
-    facts.appendChild(el("dt", null, "Author"));
-    facts.appendChild(el("dd", "f-author", book.authors.join(", ")));
 
     // Matched tropes lead the summary, then the book's other tropes.
     var ordered = pick.matched.concat(book.tags.filter(function (t) { return pick.matched.indexOf(t) < 0; }));

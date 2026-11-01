@@ -307,8 +307,6 @@ a { color: var(--gilt); }
   color: var(--card-muted); padding-top: 4px;
 }
 .facts dd { margin: 0; min-width: 0; }
-.facts h3 { font-family: var(--f-title); font-weight: 400; font-size: 1.4rem; line-height: 1.2; margin: 0; text-wrap: balance; }
-.f-author { font-style: italic; color: var(--card-muted); }
 .f-summary { line-height: 1.5; }
 .libcard .chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .libcard .chip { font-family: var(--f-mono); font-size: .76rem; border: 1px solid var(--card-rule); border-radius: 2px; padding: 1px 6px; background: var(--card-hi); }
