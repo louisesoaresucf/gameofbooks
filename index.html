@@ -2,48 +2,58 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Game of Books</title>
-  <meta name="description" content="Answer ten questions and get five fantasy novels matched to your favourite literary tropes.">
+  <meta name="description" content="Answer ten questions in the reading room and leave with five fantasy novels matched to your favourite literary tropes.">
+  <meta name="theme-color" content="#14100c">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;1,400&family=Cutive+Mono&family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&display=swap">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <main class="wrap">
-    <header class="site">
+    <header class="masthead">
       <h1><a href="./">Game of Books</a></h1>
-      <p class="tagline">Ten questions stand between you and your next fantasy read.</p>
-      <p class="flourish" aria-hidden="true">✦ ✦ ✦</p>
+      <p class="sub">Ten questions stand between you and your next fantasy read.</p>
+      <p class="skytime" id="skytime"></p>
     </header>
 
-    <section id="intro" class="card intro">
-      <p>Answer ten questions about the adventure you'd want to have. We'll match your answers to literary tropes and pick five fantasy books for you from a library of more than 570.</p>
-      <button id="start" class="btn" type="button">Begin the quest</button>
+    <section id="intro" class="card intro fade-in">
+      <div class="card-top"><span>Reader's card · No. 574</span><span>Fantasy · Recommendations</span></div>
+      <h2>A catalogue of your tastes</h2>
+      <p class="lead">The librarian has ten questions about the adventure you'd like to have. Answer them, and five volumes will be pulled from the stacks for you, matched by their literary tropes.</p>
+      <ul class="rules">
+        <li><b>i.</b><span>Ten questions, four answers each.</span></li>
+        <li><b>ii.</b><span>Press 1–4 to answer, or Backspace to go back.</span></li>
+        <li><b>iii.</b><span>Five books from 574 volumes, no more than one per author.</span></li>
+      </ul>
+      <p class="go"><button id="start" class="btn ink" type="button">Begin the quest</button></p>
     </section>
 
-    <section id="quiz" class="card" hidden>
-      <div class="progress" aria-hidden="true">
-        <span id="progress-label">1 / 10</span>
-        <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
-      </div>
-      <div id="question" class="question" aria-live="polite"></div>
-      <div class="quiz-nav">
-        <button id="back" class="btn ghost" type="button">← Back</button>
-        <span>Tip: press 1–4 to answer</span>
+    <section id="quiz" hidden>
+      <div class="shelf" id="shelf" aria-hidden="true"></div>
+      <div class="card">
+        <div class="card-top"><span id="progress-label">Question 1 of 10</span><span>Game of Books · Fantasy</span></div>
+        <div id="question" aria-live="polite"></div>
+        <div class="quiz-nav">
+          <button id="back" class="linkbtn" type="button">← Previous question</button>
+          <span>Press 1–4 to answer</span>
+        </div>
+        <span class="stamp" id="stamp" aria-hidden="true">Noted</span>
       </div>
     </section>
 
     <noscript>
-      <p class="card status">This game needs JavaScript to run.</p>
+      <p class="card">This game needs JavaScript to run.</p>
     </noscript>
   </main>
 
   <footer class="site">
-    Book list from Wikipedia's <a href="https://en.wikipedia.org/wiki/List_of_fantasy_novels">List of fantasy novels</a>.
+    Volumes from Wikipedia's <a href="https://en.wikipedia.org/wiki/List_of_fantasy_novels">List of fantasy novels</a>.
   </footer>
 
+  <script src="js/room.js"></script>
   <script src="js/quiz.js"></script>
   <script src="js/game.js"></script>
 </body>

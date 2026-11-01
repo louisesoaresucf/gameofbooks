@@ -5,14 +5,26 @@
   var QUESTIONS = window.GameOfBooks.QUESTIONS;
   var intro = document.getElementById("intro");
   var quiz = document.getElementById("quiz");
+  var shelf = document.getElementById("shelf");
   var questionEl = document.getElementById("question");
   var progressLabel = document.getElementById("progress-label");
-  var progressFill = document.getElementById("progress-fill");
   var backBtn = document.getElementById("back");
+  var stamp = document.getElementById("stamp");
 
   var answers = [];
   var current = 0;
   var locked = false;
+
+  // One leather volume per question; they light up as the shelf fills.
+  var vols = QUESTIONS.map(function (q, i) {
+    var v = document.createElement("span");
+    var h = window.ReadingRoom.hash("question-" + i);
+    v.className = "vol";
+    v.style.setProperty("--c", window.ReadingRoom.leather("q" + i));
+    v.style.setProperty("--h", 44 + (h >> 5) % 18 + "px");
+    shelf.appendChild(v);
+    return v;
+  });
 
   function start() {
     answers = [];
@@ -24,9 +36,13 @@
 
   function render() {
     var q = QUESTIONS[current];
-    progressLabel.textContent = (current + 1) + " / " + QUESTIONS.length;
-    progressFill.style.width = (current / QUESTIONS.length) * 100 + "%";
+    progressLabel.textContent = "Question " + (current + 1) + " of " + QUESTIONS.length;
     backBtn.disabled = current === 0;
+    stamp.classList.remove("show");
+    vols.forEach(function (v, i) {
+      v.classList.toggle("done", i < current);
+      v.classList.toggle("now", i === current);
+    });
 
     questionEl.innerHTML = "";
     questionEl.classList.remove("fade-in");
@@ -38,15 +54,17 @@
     heading.tabIndex = -1;
     questionEl.appendChild(heading);
 
-    var list = document.createElement("ul");
+    var list = document.createElement("ol");
     list.className = "answers";
     q.answers.forEach(function (answer, i) {
       var li = document.createElement("li");
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "answer" + (answers[current] === i ? " selected" : "");
-      btn.innerHTML = '<span class="key" aria-hidden="true">' + (i + 1) + "</span>";
-      btn.appendChild(document.createTextNode(answer.text));
+      btn.innerHTML = '<span class="key" aria-hidden="true">' + (i + 1) + ".</span>";
+      var text = document.createElement("span");
+      text.textContent = answer.text;
+      btn.appendChild(text);
       btn.addEventListener("click", function () { choose(i); });
       li.appendChild(btn);
       list.appendChild(li);
@@ -62,17 +80,19 @@
     answers[current] = index;
 
     var buttons = questionEl.querySelectorAll(".answer");
-    buttons[index].classList.add("selected");
+    Array.prototype.forEach.call(buttons, function (b, i) { b.classList.toggle("selected", i === index); });
+    stamp.classList.add("show");
+    vols[current].classList.add("done");
 
     setTimeout(function () {
       if (current < QUESTIONS.length - 1) {
         current++;
         render();
       } else {
-        progressFill.style.width = "100%";
+        stamp.textContent = "Shelved";
         window.location.href = "results.html?a=" + answers.join("");
       }
-    }, 280);
+    }, 420);
   }
 
   function back() {
