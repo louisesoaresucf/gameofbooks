@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game of Books</title>
+  <meta name="description" content="Answer ten questions and get five fantasy novels matched to your favourite literary tropes.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="site">
+      <h1><a href="./">Game of Books</a></h1>
+      <p class="tagline">Ten questions stand between you and your next fantasy read.</p>
+      <p class="flourish" aria-hidden="true">✦ ✦ ✦</p>
+    </header>
+
+    <section id="intro" class="card intro">
+      <p>Answer ten questions about the adventure you'd want to have. We'll match your answers to literary tropes and pick five fantasy books for you from a library of more than 570.</p>
+      <button id="start" class="btn" type="button">Begin the quest</button>
+    </section>
+
+    <section id="quiz" class="card" hidden>
+      <div class="progress" aria-hidden="true">
+        <span id="progress-label">1 / 10</span>
+        <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+      </div>
+      <div id="question" class="question" aria-live="polite"></div>
+      <div class="quiz-nav">
+        <button id="back" class="btn ghost" type="button">← Back</button>
+        <span>Tip: press 1–4 to answer</span>
+      </div>
+    </section>
+
+    <noscript>
+      <p class="card status">This game needs JavaScript to run.</p>
+    </noscript>
+  </main>
+
+  <footer class="site">
+    Book list from Wikipedia's <a href="https://en.wikipedia.org/wiki/List_of_fantasy_novels">List of fantasy novels</a>.
+  </footer>
+
+  <script src="js/quiz.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
