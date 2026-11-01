@@ -2,42 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Your Reading List · Game of Books</title>
-  <meta name="description" content="Five fantasy novels matched to your favourite literary tropes.">
+  <meta name="description" content="Five fantasy novels pulled from the stacks and matched to your favourite literary tropes.">
+  <meta name="theme-color" content="#14100c">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;1,400&family=Cutive+Mono&family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&display=swap">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <main class="wrap">
-    <header class="site">
+    <header class="masthead">
       <h1><a href="./">Game of Books</a></h1>
-      <p class="flourish" aria-hidden="true">✦ ✦ ✦</p>
+      <p class="skytime" id="skytime"></p>
     </header>
 
-    <section class="card">
-      <div class="results-head">
-        <h2>Your reading list</h2>
-        <p>Your answers point to these tropes:</p>
-        <ul id="tropes" class="chips"></ul>
-      </div>
+    <h2 class="panel-h">Your Reading List</h2>
+    <p class="intro-line">Five volumes pulled from the stacks for you. Choose a spine to jump to its catalogue card.</p>
+    <ul class="tastes" id="tropes"><li class="k">Your tropes</li></ul>
 
-      <p id="status" class="status">Searching the library…</p>
-      <ol id="books" class="books"></ol>
+    <p id="status" class="status" aria-live="polite">Searching the stacks…</p>
+    <div class="bookcase" id="case" hidden></div>
+    <ol id="books" class="recs"></ol>
 
-      <div class="actions">
-        <a class="btn" href="./">Play again</a>
-        <button id="share" class="btn ghost" type="button">Copy link to this list</button>
-      </div>
-    </section>
+    <div class="actions">
+      <a class="btn solid" href="./">Play again</a>
+      <button id="share" class="btn" type="button">Copy link to this list</button>
+    </div>
   </main>
 
   <footer class="site">
-    Book list from Wikipedia's <a href="https://en.wikipedia.org/wiki/List_of_fantasy_novels">List of fantasy novels</a>.
+    Volumes from Wikipedia's <a href="https://en.wikipedia.org/wiki/List_of_fantasy_novels">List of fantasy novels</a>.
   </footer>
 
+  <script src="js/room.js"></script>
   <script src="js/quiz.js"></script>
   <script src="js/results.js"></script>
 </body>
