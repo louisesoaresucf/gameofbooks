@@ -35,10 +35,11 @@
 
 html, body { margin: 0; }
 
+html { background: var(--bg-deep); }
+
 body {
   min-height: 100vh;
-  background:
-    radial-gradient(ellipse at top, var(--bg) 0%, var(--bg-deep) 100%) fixed;
+  background: radial-gradient(ellipse 120% 60% at top, var(--bg) 0%, var(--bg-deep) 100%) no-repeat var(--bg-deep);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 1.15rem;
