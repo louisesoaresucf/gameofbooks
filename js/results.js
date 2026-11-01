@@ -234,7 +234,7 @@
     });
   }
 
-  fetch("fantasy_novels.json")
+  fetch("fantasy_novels.json?v=20261101-2")
     .then(function (res) {
       if (!res.ok) throw new Error("HTTP " + res.status);
       return res.json();

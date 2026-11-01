@@ -28,3 +28,13 @@ python3 -m http.server 8000
 ```
 
 Then open http://localhost:8000.
+
+## Updating the site
+
+The pages load `css/` and `js/` files (and the JSON) with a version suffix such as
+`?v=20261101-2`, so browsers and GitHub Pages' cache always pick up new styles.
+When you change any CSS, JavaScript or the book list, bump that value everywhere:
+
+```bash
+grep -rl "?v=20261101-2" index.html results.html js | xargs sed -i 's/?v=20261101-2/?v=NEW-VERSION/g'
+```
