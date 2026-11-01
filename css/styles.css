@@ -322,7 +322,12 @@ a { color: var(--gilt); }
 .card-hint {
   align-self: center; margin: 0; color: var(--muted); font-style: italic; transition: opacity .25s;
 }
-.card-hint::before { content: "← "; color: var(--gilt-dim); font-style: normal; }
+.synopsis { max-width: 62ch; border-left: 2px solid var(--gilt-dim); padding: 2px 0 2px 20px; font-style: normal; }
+.syn-k { margin: 0 0 6px; font-family: var(--f-mono); font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; color: var(--gilt); }
+.syn-text { margin: 0; color: var(--parch); font-size: 1.05rem; line-height: 1.6; }
+.syn-text.loading { color: var(--muted); font-style: italic; }
+.syn-src { margin: 8px 0 0; font-family: var(--f-mono); font-size: .76rem; letter-spacing: .04em; }
+.syn-src:empty { display: none; }
 .rec.open .card-hint, .rec.closing .card-hint { opacity: 0; pointer-events: none; }
 
 /* the card slides out from behind the book, overshoots a touch, and settles */
@@ -392,8 +397,7 @@ footer.site { text-align: center; font-family: var(--f-mono); font-size: .78rem;
   .win.side { display: none; }
   .rec { grid-template-columns: minmax(0, 1fr); gap: 18px; --from-x: 0px; --from-y: -230px; --origin: top center; }
   .card-slot { min-height: 0; }
-  .card-hint { text-align: center; }
-  .card-hint::before { content: "↑ "; }
+  .synopsis { justify-self: stretch; }
   .tome { width: 160px; }
   .tome-title { font-size: 1.15rem; }
 }

@@ -163,7 +163,7 @@
     li.style.animationDelay = (i * 80) + "ms";
     var book = bookCover(pick.book, i);
     var slot = el("div", "card-slot");
-    var hint = el("p", "card-hint", "Open the book to draw out its library card");
+    var hint = synopsis(pick);
     var lib = libraryCard(pick, i);
     slot.appendChild(hint);
     slot.appendChild(lib);
@@ -171,6 +171,71 @@
     li.appendChild(slot);
     book.addEventListener("click", function () { toggle(li); });
     return li;
+  }
+
+  /* ---------- synopsis beside each closed book ---------- */
+  var WIKI_SUMMARY = "https://en.wikipedia.org/api/rest_v1/page/summary/";
+
+  // Article title from a Wikipedia URL; null when there is none or it points into a section of another page.
+  function wikiTitle(url) {
+    var m = url && /\/wiki\/([^?#]+)(#?)/.exec(url);
+    if (!m || m[2]) return null;
+    try { return decodeURIComponent(m[1]); } catch (e) { return m[1]; }
+  }
+
+  // Keep the first few sentences, up to roughly `max` characters.
+  function trimExtract(text, max) {
+    var sentences = text.replace(/\s+/g, " ").trim().match(/[^.!?]+[.!?]+["')\]]*(\s|$)/g) || [text];
+    var out = "";
+    for (var i = 0; i < sentences.length; i++) {
+      if (out && (out + sentences[i]).length > max) break;
+      out += sentences[i];
+    }
+    out = out.trim();
+    if (out.length > max * 1.5) out = out.slice(0, max).replace(/\s+\S*$/, "") + "…";
+    return out;
+  }
+
+  function tropeSummary(pick) {
+    var ordered = pick.matched.concat(pick.book.tags.filter(function (t) { return pick.matched.indexOf(t) < 0; }));
+    return ordered.map(function (t) { return (G.TROPES[t] || {}).blurb || label(t) + "."; }).join(" ");
+  }
+
+  function synopsis(pick) {
+    var book = pick.book;
+    var box = el("div", "card-hint synopsis");
+    var head = el("p", "syn-k", "Synopsis");
+    var text = el("p", "syn-text");
+    var src = el("p", "syn-src");
+    box.appendChild(head);
+    box.appendChild(text);
+    box.appendChild(src);
+
+    function fallback() {
+      head.textContent = "In brief";
+      text.textContent = tropeSummary(pick);
+      src.textContent = "";
+    }
+
+    var title = wikiTitle(book.wikipedia_url);
+    if (!title || !window.fetch) { fallback(); return box; }
+
+    text.textContent = "Consulting the archive…";
+    text.classList.add("loading");
+    fetch(WIKI_SUMMARY + encodeURIComponent(title.replace(/ /g, "_")), { headers: { "Accept": "application/json" } })
+      .then(function (res) { if (!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+      .then(function (data) {
+        if (!data || data.type === "disambiguation" || !data.extract) throw new Error("no summary");
+        text.classList.remove("loading");
+        text.textContent = trimExtract(data.extract, 360);
+        var a = el("a", null, "From Wikipedia ↗");
+        a.href = (data.content_urls && data.content_urls.desktop && data.content_urls.desktop.page) || book.wikipedia_url;
+        a.target = "_blank";
+        a.rel = "noopener";
+        src.appendChild(a);
+      })
+      .catch(function () { text.classList.remove("loading"); fallback(); });
+    return box;
   }
 
   /* ---------- drawing a card out of its book, and tucking it back in ---------- */
@@ -234,7 +299,7 @@
     });
   }
 
-  fetch("fantasy_novels.json?v=20261101-2")
+  fetch("fantasy_novels.json?v=20261101-3")
     .then(function (res) {
       if (!res.ok) throw new Error("HTTP " + res.status);
       return res.json();
