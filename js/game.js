@@ -18,7 +18,7 @@
   // One leather volume per question; they light up as the shelf fills.
   var vols = QUESTIONS.map(function (q, i) {
     var v = document.createElement("span");
-    var h = window.ReadingRoom.hash("question-" + i);
+    var h = window.GameOfBooks.hash("question-" + i);
     v.className = "vol";
     v.style.setProperty("--c", window.ReadingRoom.leather("q" + i));
     v.style.setProperty("--h", 44 + (h >> 5) % 18 + "px");
@@ -101,6 +101,16 @@
       render();
     }
   }
+
+  // Coming Back from results.html can restore this page from the back/forward cache,
+  // still locked on the last question. Unlock it so the reader can revise their answers.
+  window.addEventListener("pageshow", function (e) {
+    if (e.persisted && !quiz.hidden) {
+      stamp.textContent = "Noted";
+      current = Math.min(current, QUESTIONS.length - 1);
+      render();
+    }
+  });
 
   document.getElementById("start").addEventListener("click", start);
   backBtn.addEventListener("click", back);

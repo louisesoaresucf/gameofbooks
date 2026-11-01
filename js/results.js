@@ -3,7 +3,10 @@
   "use strict";
 
   var G = window.GameOfBooks;
-  var Room = window.ReadingRoom;
+  // Asset version from this script's own URL (results.js?v=...), so the book list is cache-busted
+  // with the same value as the HTML's links and there is no separate copy to keep in sync.
+  var script = document.currentScript;
+  var VERSION = (script && (/[?&]v=([^&#]+)/.exec(script.src) || [])[1]) || "";
   var answers = G.parseAnswers(window.location.search);
 
   // No valid answers (e.g. someone opened results.html directly): send them to the game.
@@ -42,8 +45,9 @@
   var assigned = {}, used = {};
   function binding(book) {
     if (!assigned[book.id]) {
-      var k = Room.hash(book.id) % BINDINGS.length;
-      while (used[k]) k = (k + 1) % BINDINGS.length;
+      var k = G.hash(book.id) % BINDINGS.length;
+      // Skip colours already taken; once all are taken (more books than colours), reuse.
+      for (var n = 0; n < BINDINGS.length && used[k]; n++) k = (k + 1) % BINDINGS.length;
       used[k] = true;
       assigned[book.id] = BINDINGS[k];
     }
@@ -51,7 +55,7 @@
   }
 
   function spine(pick, i) {
-    var book = pick.book, h = Room.hash(book.id), c = binding(book);
+    var book = pick.book, h = G.hash(book.id), c = binding(book);
     var a = el("a", "spine shelved" + (book.type === "series" ? " series" : ""));
     a.href = "#rec-" + (i + 1);
     a.style.setProperty("--c", c[0]);
@@ -113,12 +117,9 @@
     facts.appendChild(el("dt", null, "Author"));
     facts.appendChild(el("dd", "f-author", book.authors.join(", ")));
 
-    // Matched tropes lead the summary, then the book's other tropes.
-    var ordered = pick.matched.concat(book.tags.filter(function (t) { return pick.matched.indexOf(t) < 0; }));
+    var ordered = orderedTropes(pick);
     facts.appendChild(el("dt", null, "Summary"));
-    facts.appendChild(el("dd", "f-summary", ordered.map(function (t) {
-      return (G.TROPES[t] || {}).blurb || label(t) + ".";
-    }).join(" ")));
+    facts.appendChild(el("dd", "f-summary", tropeSummary(pick)));
 
     facts.appendChild(el("dt", null, "Tropes"));
     var tropeDd = el("dd");
@@ -183,9 +184,28 @@
     try { return decodeURIComponent(m[1]); } catch (e) { return m[1]; }
   }
 
+  var ABBREVIATION = /^(mr|mrs|ms|dr|st|jr|sr|mt|ft|vs|etc|no|vol|ed|eds|e\.g|i\.e|c|ca)$/i;
+
+  // Split prose into sentences without breaking on initials ("C. S. Lewis", "J.R.R.") or common
+  // abbreviations, and without losing text after the last full stop.
+  function splitSentences(text) {
+    var out = [], start = 0, re = /[.!?]+["')\]\u201d\u2019]*(?=\s|$)/g, m;
+    while ((m = re.exec(text))) {
+      var end = m.index + m[0].length;
+      var word = (/(\S+)$/.exec(text.slice(start, m.index)) || ["", ""])[1];
+      var next = text.slice(end).replace(/^\s+/, "").charAt(0);
+      if (m[0].charAt(0) === "." && (/^([A-Z]\.)*[A-Z]$/.test(word) || ABBREVIATION.test(word))) continue;
+      if (next && !/[A-Z0-9"'(\u201c\u2018]/.test(next)) continue;
+      out.push(text.slice(start, end));
+      start = end;
+    }
+    if (text.slice(start).trim()) out.push(text.slice(start));
+    return out;
+  }
+
   // Keep the first few sentences, up to roughly `max` characters.
   function trimExtract(text, max) {
-    var sentences = text.replace(/\s+/g, " ").trim().match(/[^.!?]+[.!?]+["')\]]*(\s|$)/g) || [text];
+    var sentences = splitSentences(text.replace(/\s+/g, " ").trim());
     var out = "";
     for (var i = 0; i < sentences.length; i++) {
       if (out && (out + sentences[i]).length > max) break;
@@ -196,9 +216,25 @@
     return out;
   }
 
+  // Matched tropes first, then the book's other tropes.
+  function orderedTropes(pick) {
+    return pick.matched.concat(pick.book.tags.filter(function (t) { return pick.matched.indexOf(t) < 0; }));
+  }
+
   function tropeSummary(pick) {
-    var ordered = pick.matched.concat(pick.book.tags.filter(function (t) { return pick.matched.indexOf(t) < 0; }));
-    return ordered.map(function (t) { return (G.TROPES[t] || {}).blurb || label(t) + "."; }).join(" ");
+    return orderedTropes(pick).map(function (t) { return (G.TROPES[t] || {}).blurb || label(t) + "."; }).join(" ");
+  }
+
+  function fold(s) { return (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
+
+  // Some dataset links point at a different topic (Tom Holt's "Valhalla" -> the Norse hall).
+  // Accept a summary only when it names one of the book's authors.
+  function aboutBook(data, book) {
+    var hay = fold((data.description || "") + " " + data.extract);
+    return book.authors.some(function (a) {
+      var surname = fold(a).replace(/[^a-z\s'-]/g, " ").trim().split(/\s+/).pop();
+      return surname && surname.length > 1 && hay.indexOf(surname) >= 0;
+    });
   }
 
   function synopsis(pick) {
@@ -225,7 +261,9 @@
     fetch(WIKI_SUMMARY + encodeURIComponent(title.replace(/ /g, "_")), { headers: { "Accept": "application/json" } })
       .then(function (res) { if (!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
       .then(function (data) {
-        if (!data || data.type === "disambiguation" || !data.extract) throw new Error("no summary");
+        if (!data || data.type === "disambiguation" || !data.extract || !aboutBook(data, book)) {
+          throw new Error("no summary for this book");
+        }
         text.classList.remove("loading");
         text.textContent = trimExtract(data.extract, 360);
         var a = el("a", null, "From Wikipedia ↗");
@@ -239,7 +277,8 @@
   }
 
   /* ---------- drawing a card out of its book, and tucking it back in ---------- */
-  var reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Read live: the OS setting can change while the page is open.
+  function reduceMotion() { return !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }
 
   function isOpen(li) { return li.classList.contains("open"); }
 
@@ -262,15 +301,19 @@
     li.classList.remove("open");
     li.querySelector(".tome-btn").setAttribute("aria-expanded", "false");
     syncAllButton();
-    if (reduceMotion) { lib.hidden = true; return; }
-    li.classList.add("closing");
     lib.classList.remove("draw");
+    if (reduceMotion()) { lib.hidden = true; return; }
+    li.classList.add("closing");
     lib.classList.add("tuck");
-    lib.addEventListener("animationend", function done(e) {
-      if (e.target !== lib) return;
-      lib.removeEventListener("animationend", done);
+    function finish() {
+      lib.removeEventListener("animationend", onEnd);
+      clearTimeout(timer);
       if (!isOpen(li)) { lib.hidden = true; lib.classList.remove("tuck"); li.classList.remove("closing"); }
-    });
+    }
+    function onEnd(e) { if (e.target === lib) finish(); }
+    lib.addEventListener("animationend", onEnd);
+    // If the animation is suppressed (e.g. motion settings changed), animationend never fires.
+    var timer = setTimeout(finish, 700);
   }
 
   function toggle(li) { if (isOpen(li)) closeCard(li); else openCard(li); }
@@ -284,7 +327,7 @@
   allBtn.addEventListener("click", function () {
     var all = rows().every(isOpen);
     rows().forEach(function (li, i) {
-      setTimeout(function () { if (all) closeCard(li); else openCard(li); }, reduceMotion ? 0 : i * 120);
+      setTimeout(function () { if (all) closeCard(li); else openCard(li); }, reduceMotion() ? 0 : i * 120);
     });
   });
 
@@ -299,7 +342,7 @@
     });
   }
 
-  fetch("fantasy_novels.json?v=20261101-3")
+  fetch("fantasy_novels.json" + (VERSION ? "?v=" + encodeURIComponent(VERSION) : ""))
     .then(function (res) {
       if (!res.ok) throw new Error("HTTP " + res.status);
       return res.json();

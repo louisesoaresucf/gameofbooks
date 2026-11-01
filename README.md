@@ -31,10 +31,12 @@ Then open http://localhost:8000.
 
 ## Updating the site
 
-The pages load `css/` and `js/` files (and the JSON) with a version suffix such as
-`?v=20261101-2`, so browsers and GitHub Pages' cache always pick up new styles.
-When you change any CSS, JavaScript or the book list, bump that value everywhere:
+`index.html` and `results.html` load the CSS and JavaScript with a version suffix such as
+`?v=20261101-4`, so browsers and GitHub Pages' cache always pick up new files. The book
+list (`fantasy_novels.json`) reuses the version from the `results.js` link automatically.
+When you change any CSS, JavaScript or the book list, set a new version in both pages
+(this works whatever the current value is):
 
 ```bash
-grep -rl "?v=20261101-2" index.html results.html js | xargs sed -i 's/?v=20261101-2/?v=NEW-VERSION/g'
+sed -i -E 's/\?v=[0-9A-Za-z.-]+"/?v=NEW-VERSION"/g' index.html results.html
 ```

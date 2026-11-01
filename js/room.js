@@ -123,20 +123,37 @@
     size();
     addEventListener("resize", size);
     for (var i = 0; i < 38; i++) P.push({ x: rnd(), y: rnd(), r: .6 + rnd() * 1.6, v: .00006 + rnd() * .00014, ph: rnd() * 6.28, tw: .5 + rnd() * 1.5 });
+
+    // One glowing dot, rendered once and stamped with drawImage (no per-frame gradients).
+    var sprite = document.createElement("canvas"), SR = 32;
+    sprite.width = sprite.height = SR * 2;
+    var sctx = sprite.getContext("2d"), g = sctx.createRadialGradient(SR, SR, 0, SR, SR, SR);
+    g.addColorStop(0, "rgba(255,226,150,1)");
+    g.addColorStop(1, "rgba(255,226,150,0)");
+    sctx.fillStyle = g;
+    sctx.fillRect(0, 0, SR * 2, SR * 2);
+
+    var FRAME = 1000 / 30, last = -FRAME, running = false;
     function draw(ts) {
+      running = false;
+      if (document.hidden) return; // resumed by visibilitychange
+      if (!still) { running = true; requestAnimationFrame(draw); }
+      if (ts - last < FRAME) return; // ~30fps is plenty for slow drift
+      var step = Math.min(ts - last, 100) / 16;
+      last = ts;
       ctx.clearRect(0, 0, W, H);
       P.forEach(function (p) {
-        if (!still) { p.y -= p.v * 16; if (p.y < -.02) { p.y = 1.02; p.x = rnd(); } }
-        var x = (p.x + Math.sin(ts / 4000 + p.ph) * .01) * W, y = p.y * H;
-        var a = (.25 + .35 * (0.5 + 0.5 * Math.sin(ts / 900 * p.tw + p.ph))) * magic;
-        var g = ctx.createRadialGradient(x, y, 0, x, y, p.r * 4);
-        g.addColorStop(0, "rgba(255,226,150," + a + ")");
-        g.addColorStop(1, "rgba(255,226,150,0)");
-        ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(x, y, p.r * 4, 0, 6.283); ctx.fill();
+        if (!still) { p.y -= p.v * 16 * step; if (p.y < -.02) { p.y = 1.02; p.x = rnd(); } }
+        var x = (p.x + Math.sin(ts / 4000 + p.ph) * .01) * W, y = p.y * H, d = p.r * 8;
+        ctx.globalAlpha = (.25 + .35 * (0.5 + 0.5 * Math.sin(ts / 900 * p.tw + p.ph))) * magic;
+        ctx.drawImage(sprite, x - d / 2, y - d / 2, d, d);
       });
-      if (!still) requestAnimationFrame(draw);
+      ctx.globalAlpha = 1;
     }
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden && !running) { running = true; requestAnimationFrame(draw); }
+    });
+    running = true;
     requestAnimationFrame(draw);
   })();
 
@@ -144,15 +161,9 @@
   setInterval(setSky, 60000);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) setSky(); });
 
-  /* Shared helpers for leather-bound spines and covers. */
+  /* Leather colour for a spine, picked by the shared hash in js/quiz.js (loaded first). */
   var LEATHER = ["--l0", "--l1", "--l2", "--l3", "--l4", "--l5", "--l6", "--l7"];
-  function hash(s) {
-    var h = 2166136261;
-    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
-    return h >>> 0;
-  }
   window.ReadingRoom = {
-    hash: hash,
-    leather: function (key) { return "var(" + LEATHER[hash(key) % LEATHER.length] + ")"; }
+    leather: function (key) { return "var(" + LEATHER[window.GameOfBooks.hash(key) % LEATHER.length] + ")"; }
   };
 })();

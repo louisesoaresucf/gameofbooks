@@ -213,6 +213,7 @@
     buildProfile: buildProfile,
     topTropes: topTropes,
     recommend: recommend,
+    hash: hash,
     parseAnswers: parseAnswers
   };
 })(window);
