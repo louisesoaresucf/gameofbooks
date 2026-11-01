@@ -33,27 +33,28 @@
     tropesEl.appendChild(el("li", "tag", label(t)));
   });
 
-  function whyText(pick) {
-    var names = pick.matched.slice(0, 2).map(label);
-    var p = el("p", "why");
-    if (!names.length) {
-      p.textContent = "A wildcard from the stacks.";
-      return p;
+  // Bright cloth bindings for the recommended books: [base, highlight].
+  var BINDINGS = [
+    ["#a8242c", "#e2584b"], ["#1d7149", "#43b57c"], ["#1d4b98", "#4f8ad9"], ["#b8691a", "#f0ad4a"],
+    ["#642a8a", "#a463cc"], ["#11706f", "#3fb6ae"], ["#a83a66", "#e47ba0"], ["#30318a", "#6b6bcc"]
+  ];
+  // Each book in the list gets its own colour: start from its hash, skip colours already used.
+  var assigned = {}, used = {};
+  function binding(book) {
+    if (!assigned[book.id]) {
+      var k = Room.hash(book.id) % BINDINGS.length;
+      while (used[k]) k = (k + 1) % BINDINGS.length;
+      used[k] = true;
+      assigned[book.id] = BINDINGS[k];
     }
-    p.appendChild(document.createTextNode("For your love of "));
-    names.forEach(function (n, i) {
-      if (i) p.appendChild(document.createTextNode(" and "));
-      p.appendChild(el("em", null, n));
-    });
-    p.appendChild(document.createTextNode("."));
-    return p;
+    return assigned[book.id];
   }
 
   function spine(pick, i) {
-    var book = pick.book, h = Room.hash(book.id);
+    var book = pick.book, h = Room.hash(book.id), c = binding(book);
     var a = el("a", "spine shelved" + (book.type === "series" ? " series" : ""));
     a.href = "#rec-" + (i + 1);
-    a.style.setProperty("--c", Room.leather(book.id));
+    a.style.setProperty("--c", c[0]);
     a.style.setProperty("--w", (book.type === "series" ? 46 + (h >> 4) % 10 : 34 + (h >> 4) % 10) + "px");
     a.style.setProperty("--h", 128 + (h >> 9) % 34 + "px");
     a.style.setProperty("--i", i);
@@ -64,34 +65,64 @@
     return a;
   }
 
-  function card(pick, i) {
+  /* Left: a colourful front-facing book with its title and author. */
+  function bookCover(book) {
+    var c = binding(book);
+    var wrap = el("div", "tome");
+    wrap.setAttribute("aria-hidden", "true");
+    wrap.style.setProperty("--b", c[0]);
+    wrap.style.setProperty("--bh", c[1]);
+    var face = el("div", "tome-face");
+    face.appendChild(el("span", "orn", "❦"));
+    face.appendChild(el("p", "tome-title", book.title));
+    face.appendChild(el("span", "tome-rule"));
+    face.appendChild(el("p", "tome-author", book.authors.join(", ")));
+    face.appendChild(el("span", "orn", "❦"));
+    wrap.appendChild(face);
+    return wrap;
+  }
+
+  /* Right: a library card summarising the book's tropes. */
+  function libraryCard(pick, i) {
     var book = pick.book;
-    var li = el("li", "card rec fade-in");
-    li.id = "rec-" + (i + 1);
-    li.style.animationDelay = (i * 80) + "ms";
+    var card = el("article", "card libcard");
+    card.setAttribute("aria-labelledby", "rec-title-" + (i + 1));
 
-    var cover = el("div", "cover");
-    cover.setAttribute("aria-hidden", "true");
-    cover.style.setProperty("--c", Room.leather(book.id));
-    var frame = el("div", "frame");
-    frame.appendChild(el("span", "orn", "❧"));
-    frame.appendChild(el("p", "ct", book.title));
-    frame.appendChild(el("span", "orn", "❧"));
-    cover.appendChild(frame);
-    li.appendChild(cover);
+    var top = el("div", "card-top");
+    top.appendChild(el("span", null, "Library card · No. " + (i + 1)));
+    top.appendChild(el("span", null, book.type === "series" ? "Series" : "Novel"));
+    card.appendChild(top);
 
-    var body = el("div");
-    body.appendChild(el("p", "rn", "No. " + (i + 1) + (book.type === "series" ? " · Series" : " · Novel")));
-    body.appendChild(el("h3", null, book.title));
-    body.appendChild(el("p", "ra", "by " + book.authors.join(", ")));
-    body.appendChild(whyText(pick));
+    var facts = el("dl", "facts");
+    var dt = el("dt", null, "Title"), dd = el("dd", "f-title");
+    var h3 = el("h3", null, book.title);
+    h3.id = "rec-title-" + (i + 1);
+    dd.appendChild(h3);
+    facts.appendChild(dt); facts.appendChild(dd);
+    facts.appendChild(el("dt", null, "Author"));
+    facts.appendChild(el("dd", "f-author", book.authors.join(", ")));
 
+    // Matched tropes lead the summary, then the book's other tropes.
+    var ordered = pick.matched.concat(book.tags.filter(function (t) { return pick.matched.indexOf(t) < 0; }));
+    facts.appendChild(el("dt", null, "Summary"));
+    facts.appendChild(el("dd", "f-summary", ordered.map(function (t) {
+      return (G.TROPES[t] || {}).blurb || label(t) + ".";
+    }).join(" ")));
+
+    facts.appendChild(el("dt", null, "Tropes"));
+    var tropeDd = el("dd");
     var chips = el("ul", "chips");
-    chips.setAttribute("aria-label", "Matching tropes");
-    pick.matched.forEach(function (t) { chips.appendChild(el("li", "chip", label(t))); });
-    if (pick.matched.length) body.appendChild(chips);
+    ordered.forEach(function (t) {
+      var hit = pick.matched.indexOf(t) >= 0;
+      var chip = el("li", "chip" + (hit ? " hit" : ""), (hit ? "✓ " : "") + label(t));
+      if (hit) chip.title = "Matches your answers";
+      chips.appendChild(chip);
+    });
+    tropeDd.appendChild(chips);
+    facts.appendChild(tropeDd);
 
-    var src = el("p", "src");
+    facts.appendChild(el("dt", null, "Source"));
+    var src = el("dd");
     var link = el("a");
     link.target = "_blank";
     link.rel = "noopener";
@@ -104,9 +135,23 @@
       link.textContent = "Look it up ↗";
     }
     src.appendChild(link);
-    body.appendChild(src);
+    facts.appendChild(src);
+    card.appendChild(facts);
 
-    li.appendChild(body);
+    if (pick.matched.length) {
+      card.appendChild(el("p", "matchnote", "✓ " + pick.matched.length + " of " + book.tags.length +
+        " tropes match your answers"));
+    }
+    card.appendChild(el("span", "stamp show", "Recommended"));
+    return card;
+  }
+
+  function card(pick, i) {
+    var li = el("li", "rec fade-in");
+    li.id = "rec-" + (i + 1);
+    li.style.animationDelay = (i * 80) + "ms";
+    li.appendChild(bookCover(pick.book));
+    li.appendChild(libraryCard(pick, i));
     return li;
   }
 
